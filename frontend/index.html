@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent</title>
+</head>
+
+<body>
+
+    <h1>🤖 AI Agent</h1>
+
+    <p id="status">Connecting to Django...</p>
+
+    <button id="testButton">Test Backend</button>
+
+    <p id="response"></p>
+
+    <script>
+        const status = document.getElementById("status");
+        const testButton = document.getElementById("testButton");
+        const response = document.getElementById("response");
+
+        testButton.addEventListener("click", async () => {
+            try {
+                const result = await fetch("http://127.0.0.1:8000/api/");
+                const data = await result.json();
+
+                response.textContent = data.message;
+                status.textContent = "✅ Django connected";
+            } catch (error) {
+                status.textContent = "❌ Django connection failed";
+                console.error(error);
+            }
+        });
+    </script>
+
+</body>
+</html>

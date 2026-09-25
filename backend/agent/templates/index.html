@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Agent</title>
+
+    <!-- Puter.js -->
+    <script src="https://js.puter.com/v2/"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 850px;
+            height: 90vh;
+            max-height: 800px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 20px 24px;
+            background: #111827;
+            color: white;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .header p {
+            margin: 6px 0 0;
+            font-size: 13px;
+            color: #cbd5e1;
+        }
+
+        .status {
+            padding: 10px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .chat {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 18px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .bubble {
+            max-width: 75%;
+            padding: 13px 16px;
+            border-radius: 14px;
+            line-height: 1.5;
+            font-size: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .message.agent .bubble {
+            background: #f1f5f9;
+            color: #1e293b;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user .bubble {
+            background: #2563eb;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .thinking {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .input-area {
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 13px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            outline: none;
+            font-size: 15px;
+        }
+
+        #messageInput:focus {
+            border-color: #2563eb;
+        }
+
+        #sendButton {
+            border: none;
+            background: #2563eb;
+            color: white;
+            padding: 0 22px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        #sendButton:hover {
+            background: #1d4ed8;
+        }
+
+        #sendButton:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 0;
+            }
+
+            .app {
+                height: 100vh;
+                max-height: none;
+                border-radius: 0;
+            }
+
+            .bubble {
+                max-width: 85%;
+            }
+
+            #sendButton {
+                padding: 0 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <div class="header">
+        <h1>🤖 AI Agent</h1>
+        <p>Python + Django + Puter AI</p>
+    </div>
+
+    <div class="status" id="status">
+        Checking Django backend...
+    </div>
+
+    <div class="chat" id="chat">
+
+        <div class="message agent">
+            <div class="bubble">
+                👋 Hello! I am your AI agent.
+
+                You can ask me questions and I will use Puter AI to respond.
+            </div>
+        </div>
+
+    </div>
+
+    <div class="input-area">
+
+        <div class="input-wrapper">
+
+            <input
+                type="text"
+                id="messageInput"
+                placeholder="Ask me something..."
+                autocomplete="off"
+            >
+
+            <button id="sendButton">
+                Send
+            </button>
+
+        </div>
+
+        <div class="footer">
+            Powered by Django + Puter AI
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // --------------------------------------------------
+    // DOM ELEMENTS
+    // --------------------------------------------------
+
+    const chat = document.getElementById("chat");
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+    const status = document.getElementById("status");
+
+
+    // --------------------------------------------------
+    // ADD MESSAGE TO CHAT
+    // --------------------------------------------------
+
+    function addMessage(text, type) {
+
+        const message = document.createElement("div");
+
+        message.className = `message ${type}`;
+
+        const bubble = document.createElement("div");
+
+        bubble.className = "bubble";
+
+        bubble.textContent = text;
+
+        message.appendChild(bubble);
+
+        chat.appendChild(message);
+
+        chat.scrollTop = chat.scrollHeight;
+
+        return message;
+    }
+
+
+    // --------------------------------------------------
+    // CHECK DJANGO BACKEND
+    // --------------------------------------------------
+
+    async function checkDjango() {
+
+        try {
+
+            const response = await fetch("/api/");
+
+            const data = await response.json();
+
+            if (data.success) {
+
+                status.textContent = "🟢 Django backend connected";
+
+            } else {
+
+                status.textContent = "🔴 Django backend error";
+
+            }
+
+        } catch (error) {
+
+            console.error("Django error:", error);
+
+            status.textContent = "🔴 Cannot connect to Django";
+
+        }
+
+    }
+
+
+    // --------------------------------------------------
+    // SEND MESSAGE TO PUTER WORKER
+    // --------------------------------------------------
+
+    async function sendMessage() {
+
+        const message = messageInput.value.trim();
+
+        if (!message) {
+            return;
+        }
+
+
+        // Show user message
+
+        addMessage(message, "user");
+
+
+        // Clear input
+
+        messageInput.value = "";
+
+
+        // Disable controls
+
+        sendButton.disabled = true;
+
+        messageInput.disabled = true;
+
+
+        // Thinking message
+
+        const thinkingMessage = addMessage(
+            "🧠 Thinking...",
+            "agent"
+        );
+
+        thinkingMessage.querySelector(".bubble").classList.add("thinking");
+
+
+        try {
+
+            /*
+             * IMPORTANT:
+             *
+             * We are NOT using:
+             *
+             * puter.ai.chat()
+             *
+             * because that caused the authentication
+             * problem on localhost.
+             *
+             * Instead, we call our Puter Worker.
+             *
+             * puter.workers.exec() automatically sends
+             * the authenticated Puter user context.
+             */
+
+            const response = await puter.workers.exec(
+                "https://django-ai-bridge.puter.work/api/chat",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        message: message
+                    })
+                }
+            );
+
+
+            // Convert response to JSON
+
+            const data = await response.json();
+
+            console.log("Worker response:", data);
+
+
+            // Remove thinking message
+
+            thinkingMessage.remove();
+
+
+            // Check Worker response
+
+            if (!data.success) {
+
+                addMessage(
+                    "❌ AI error: " +
+                    (data.error || "Unknown error"),
+                    "agent"
+                );
+
+                return;
+            }
+
+
+            /*
+             * Worker response structure:
+             *
+             * data
+             *   └── response
+             *       └── message
+             *           └── content
+             */
+
+            const aiText =
+                data.response?.message?.content;
+
+
+            if (aiText) {
+
+                addMessage(
+                    aiText,
+                    "agent"
+                );
+
+            } else {
+
+                addMessage(
+                    "⚠️ The AI returned an empty response.",
+                    "agent"
+                );
+
+                console.log(
+                    "Unexpected response:",
+                    data
+                );
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "AI ERROR:",
+                error
+            );
+
+
+            // Remove thinking message
+
+            thinkingMessage.remove();
+
+
+            addMessage(
+                "❌ AI request failed: " +
+                error.message,
+                "agent"
+            );
+
+        } finally {
+
+            // Enable controls
+
+            sendButton.disabled = false;
+
+            messageInput.disabled = false;
+
+            messageInput.focus();
+
+        }
+
+    }
+
+
+    // --------------------------------------------------
+    // BUTTON CLICK
+    // --------------------------------------------------
+
+    sendButton.addEventListener(
+        "click",
+        sendMessage
+    );
+
+
+    // --------------------------------------------------
+    // ENTER KEY
+    // --------------------------------------------------
+
+    messageInput.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                sendMessage();
+
+            }
+
+        }
+    );
+
+
+    // --------------------------------------------------
+    // START
+    // --------------------------------------------------
+
+    checkDjango();
+
+    messageInput.focus();
+
+</script>
+
+</body>
+</html>
